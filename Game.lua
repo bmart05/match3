@@ -207,7 +207,11 @@ function Game:mousepressed(x, y, button)
 end
 
 function Game:mousemoved(x, y, dx, dy)
-    if not self.selectedTile then
+    if not self.selectedTile then --do not attempt to swap if no tile is clicked
+        return
+    end
+
+    if not self.state == self.gameState.WAITING then --player should not be able to move tiles while not in waiting state
         return
     end
 
