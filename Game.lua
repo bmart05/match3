@@ -1,0 +1,249 @@
+require "Board"
+require "Gem"
+require "Matcher"
+require "Clearer"
+require "Swapper"
+
+Game = Object:extend()
+
+Game.gameState = {
+    WAITING ="WAITING",
+    SWAPPING = "SWAPPING",
+    INVALID_SWAP = "INVALID_SWAP",  
+    CLEARING = "CLEARING",
+    FALLING = "FALLING",
+    SPAWNING ="SPAWNING"
+}
+Game.animationTypes = {
+    SWAP = "SWAP",
+    CLEAR = "CLEAR",
+    GRAVITY = "GRAVITY"
+}
+
+function Game:new()
+    self.board = Board(10, 10)
+    self.cellSize = 50
+
+    self.selectedTile = nil
+    self.dragStart = {}
+
+    self.animations = {}
+    self.state = self.gameState.WAITING
+end
+
+function Game:update(dt)
+    if self.state == self.gameState.WAITING then --gems should never be cleared while the game is doing something else
+        local matches = findMatches(self.board)
+        if #matches > 0 then
+            self:changeState(self.gameState.CLEARING)
+        end
+    end
+
+    for i=#self.animations,1,-1 do
+        local animation = self.animations[i]
+        animation.time = animation.time + dt --increase animation time
+
+        if animation.time > animation.duration then
+            animation.gem.animating = false --reset gem
+            table.remove(self.animations, i)
+            if #self.animations == 0 then
+                if animation.type == self.animationTypes.SWAP then --this should probably be moved into a function
+                    self:changeState(self.gameState.CLEARING)
+                elseif animation.type == self.animationTypes.CLEAR then
+                    self:changeState(self.gameState.FALLING)
+                elseif animation.type == self.animationTypes.GRAVITY then
+                    self:changeState(self.gameState.WAITING)
+                end
+            end
+        end
+    end
+end
+
+function Game:draw()
+    for i = 1, self.board.width do
+        for j = 1, self.board.height do
+            local gem = self.board:getTile(i,j)
+            
+            if gem then -- if not null
+                if not gem.animating then
+
+                    local radius = self.cellSize/2
+                    self:drawGem(gem,i,j, radius)
+
+                    if debugMode then
+                        love.graphics.setColor(0,0,0)
+                        love.graphics.print(tostring(i) .. "," .. tostring(j), i*self.cellSize,j*self.cellSize)
+                    end
+                end
+            end
+        end
+    end
+    
+   if #self.animations > 0 then
+        for _, anim in ipairs(self.animations) do
+            local progress = anim.time/anim.duration
+            if anim.type == self.animationTypes.SWAP then
+                local x = anim.startX + (anim.endX - anim.startX) * progress
+                local y = anim.startY + (anim.endY - anim.startY) * progress
+
+                local radius = self.cellSize/2
+
+                self:drawGem(anim.gem, x, y, radius)
+            elseif anim.type == self.animationTypes.GRAVITY then
+                local y = anim.startY + (anim.endY - anim.startY) * progress
+
+                local radius = self.cellSize/2
+
+                self:drawGem(anim.gem, anim.startX, y, radius)
+            elseif anim.type == self.animationTypes.CLEAR then
+                local radius = (self.cellSize/2) * (1-progress)
+
+                self:drawGem(anim.gem, anim.startX, anim.startY, radius)
+            end
+        end
+    end
+end
+
+function Game:changeState(newState)
+    print(newState)
+    if newState == self.gameState.CLEARING then
+        local matches = findMatches(self.board)
+        local clearedGems = clearGems(self.board, matches)
+        self:startClearAnimation(clearedGems)
+    elseif newState == self.gameState.FALLING then
+        local modifications = applyGravity(self.board)
+        self:startGravityAnimation(modifications) 
+    end
+
+    self.state = newState
+end
+
+function Game:drawGem(gem, x, y, radius)
+    local colour = Gem.colorValues[gem.color]
+    love.graphics.setColor(colour) 
+
+    love.graphics.ellipse("fill",x*self.cellSize+(radius),y*self.cellSize+(radius),radius,radius)
+end
+
+function Game:startSwapAnimation(tile1, tile2)
+    local x1 = tile1.x
+    local y1 = tile1.y
+
+    local x2 = tile2.x
+    local y2 = tile2.y
+
+    local gem1 = self.board:getTile(tile1.x,tile1.y)
+    local gem2 = self.board:getTile(tile2.x,tile2.y)
+
+    --set gems to animating mode to prevent them from being drawn twice
+    gem1.animating = true 
+    gem2.animating = true
+
+    local duration = 0.2
+
+    table.insert(self.animations, {
+        type = self.animationTypes.SWAP,
+        gem = gem1,
+        startX = x1,
+        startY = y1,
+        endX = x2,
+        endY = y2,
+        time = 0,
+        duration = duration
+    })
+    table.insert(self.animations, {
+        type = self.animationTypes.SWAP,
+        gem = gem2,
+        startX = x2,
+        startY = y2,
+        endX = x1,
+        endY = y1,
+        time = 0,
+        duration = duration
+    })
+end
+
+function Game:startGravityAnimation(modifications)
+    for _, col in ipairs(modifications) do --for each column modified
+        for _, anim in ipairs(col) do --for each gem in the column
+            table.insert(self.animations, anim) --insert the animation into global table
+        end
+    end
+end
+
+function Game:startClearAnimation(clearedGems)
+    local duration = 0.2
+
+    for _, gem in ipairs(clearedGems) do
+        table.insert(self.animations, {
+            type = self.animationTypes.CLEAR,
+            gem = gem.gem,
+            startX = gem.x,
+            startY = gem.y,
+            time = 0,
+            duration = duration
+        })
+    end
+end
+
+function Game:mousepressed(x, y, button)
+    if button == 1 then
+        local column = math.floor(x / self.cellSize)
+        local row = math.floor(y / self.cellSize)
+
+        if column >= 1 and column <= self.board.width
+        and row >= 1 and row <= self.board.height then
+            print("Gem selected at: " .. tostring(column) .. ", " .. tostring(row))
+            self.selectedTile = {
+                x = column,
+                y = row
+            }
+            self.dragStart = {
+                x = x,
+                y = y
+            }
+        end
+    end
+end
+
+function Game:mousemoved(x, y, dx, dy)
+    if not self.selectedTile then
+        return
+    end
+
+    local dragX = x - self.dragStart.x
+    local dragY = y - self.dragStart.y
+
+    local threshold = self.cellSize*0.75
+
+    if math.abs(dragX) > threshold or math.abs(dragY) > threshold then 
+        local target = {
+            x = self.selectedTile.x,
+            y = self.selectedTile.y
+        }
+
+        ----horizontal drag
+        if math.abs(dragX) > math.abs(dragY) then
+            if dragX > 0 then --right drag
+                target.x = target.x + 1
+            else --left drag
+                target.x = target.x - 1
+            end
+        else
+            if dragY > 0 then --down drag
+                target.y = target.y + 1
+            else --up drag
+                target.y = target.y - 1
+            end
+        end
+
+        if target.x >= 1 and target.x <= self.board.width
+        and target.y >= 1 and target.y <= self.board.height then
+            print("Swap started")
+            self:startSwapAnimation(self.selectedTile,target)
+            self.state = self.gameState.SWAPPING
+            _ = swapGems(self.board,self.selectedTile,target)
+            self.selectedTile = nil
+        end
+    end
+end
