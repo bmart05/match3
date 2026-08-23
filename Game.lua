@@ -119,6 +119,9 @@ function Game:changeState(newState)
 end
 
 function Game:drawGem(gem, x, y, radius)
+    if not gem then
+        print("No gem found at "..tostring(x)..","..tostring(y))
+    end
     local colour = Gem.colorValues[gem.color]
     love.graphics.setColor(colour) 
 

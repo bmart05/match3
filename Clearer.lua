@@ -2,9 +2,7 @@ require "Matcher"
 require "Gem"
 
 function clearGems(board, matches)
-    local clearedGems = {
-
-    }
+    local clearedGems = {}
     for _, match in ipairs(matches) do
         for _, coord in ipairs(match) do
             local gem = board:getTile(coord.x,coord.y)
@@ -17,6 +15,12 @@ function clearGems(board, matches)
             board.tiles[coord.x][coord.y] = nil 
         end
     end
+
+    print("Clearing gems at:")
+    for _, gem in ipairs(clearedGems) do
+        print(tostring(gem.x)..","..tostring(gem.y))
+    end
+
     return clearedGems
 end
 

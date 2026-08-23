@@ -44,9 +44,41 @@ function findMatches(board)
                         table.insert(coords,{x=x,y=y+k}) --insert down tiles last
                     end    
                 end
+                
                 if #coords > 0 then --if there is matching tiles, insert them into the matches table
+
+                    --NOTE: This code does not properly consider crossed matches and needs to be fixed in the future if that is wanted
+                    --check for duplicates incase of cross matches
+                    local duplicates = {} --stores the index of any duplicates
+                    for i=#coords,1,-1 do
+                        local coord1 = coords[i]
+                        for j, coord2 in ipairs(coords) do --is there duplicates inside the set
+                            if coord1.x == coord2.x and coord1.y == coord2.y and j > i then
+                                table.insert(duplicates, j)
+                            end
+                        end
+
+                        if containsCoord(matches, coord1.x,coord1.y) then
+                            table.insert(duplicates, i)
+                        end
+                    end
+
+                    for _, i in ipairs(duplicates) do
+                        table.remove(coords, i)
+                    end
+
                     table.insert(matches,coords)
                 end
+            end
+        end
+    end
+
+    if #matches > 0 then
+        print("Found matches are:")
+        for i, match in ipairs(matches) do
+            print("Match "..tostring(i))
+            for _, coord in ipairs(match) do
+                print(tostring(coord.x)..","..tostring(coord.y))
             end
         end
     end
