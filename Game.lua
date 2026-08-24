@@ -22,6 +22,10 @@ Game.animationTypes = {
 
 function Game:new()
     self.board = Board(10, 10)
+    self.origin = {
+        x = 250,
+        y = 50
+    }
     self.cellSize = 50
 
     self.selectedTile = nil
@@ -60,6 +64,11 @@ function Game:update(dt)
 end
 
 function Game:draw()
+    local borderPadding = 10
+    love.graphics.setColor(1,1,1)
+    love.graphics.rectangle("line",self.origin.x-borderPadding,self.origin.y-borderPadding,self.board.width*self.cellSize+borderPadding*2, self.board.height*self.cellSize+borderPadding*2)
+
+    --draw gems
     for i = 1, self.board.width do
         for j = 1, self.board.height do
             local gem = self.board:getTile(i,j)
@@ -79,7 +88,8 @@ function Game:draw()
         end
     end
     
-   if #self.animations > 0 then
+    --draw animated gems
+    if #self.animations > 0 then
         for _, anim in ipairs(self.animations) do
             local progress = anim.time/anim.duration
             if anim.type == self.animationTypes.SWAP then
@@ -125,7 +135,10 @@ function Game:drawGem(gem, x, y, radius)
     local colour = Gem.colorValues[gem.color]
     love.graphics.setColor(colour) 
 
-    love.graphics.ellipse("fill",x*self.cellSize+(radius),y*self.cellSize+(radius),radius,radius)
+    local posX = (x - 1) * self.cellSize + (self.cellSize/2) + self.origin.x
+    local posY = (y - 1) * self.cellSize + (self.cellSize/2) + self.origin.y
+
+    love.graphics.ellipse("fill",posX,posY,radius,radius)
 end
 
 function Game:startSwapAnimation(tile1, tile2)
@@ -190,9 +203,13 @@ function Game:startClearAnimation(clearedGems)
 end
 
 function Game:mousepressed(x, y, button)
+    if not self.state == self.gameState.WAITING then --player should not be able to move tiles while not in waiting state
+        return
+    end
+    
     if button == 1 then
-        local column = math.floor(x / self.cellSize)
-        local row = math.floor(y / self.cellSize)
+        local column = math.floor((x-self.origin.x) / self.cellSize + 1)
+        local row = math.floor((y-self.origin.y) / self.cellSize + 1)
 
         if column >= 1 and column <= self.board.width
         and row >= 1 and row <= self.board.height then

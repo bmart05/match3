@@ -1,5 +1,5 @@
 Object = require "classic"
-debugMode = true
+debugMode = false
 require "Game"
 
 function love.load()
