@@ -29,7 +29,7 @@ function Game:new()
     self.cellSize = 50
 
     self.selectedTile = nil
-    self.target = nil
+    self.invalid_match = nil
     self.dragStart = {}
 
     self.animations = {}
@@ -74,7 +74,22 @@ function Game:update(dt)
             table.remove(self.animations, i)
             if #self.animations == 0 then
                 if animation.type == self.animationTypes.SWAP then --this should probably be moved into a function
-                    self:changeState(self.gameState.CLEARING)
+                    if animation.purpose == "normal" then
+                        if self.combos <= 0 then --invalid match
+                            self:changeState(self.gameState.INVALID_SWAP)
+                        else
+                            self:changeState(self.gameState.CLEARING)
+                        end
+                    elseif animation.purpose == "invalid" then
+                        --swap tiles back
+                        local swapperTile = self.board:getTile(self.invalid_match.tile1.x, self.invalid_match.tile1.y)
+                        self.board.tiles[self.invalid_match.tile1.x][self.invalid_match.tile1.y] = self.board:getTile(self.invalid_match.tile2.x,self.invalid_match.tile2.y)
+                        self.board.tiles[self.invalid_match.tile2.x][self.invalid_match.tile2.y] = swapperTile
+
+                        self.invalid_match = nil
+
+                        self:changeState(self.gameState.WAITING)
+                    end
                 elseif animation.type == self.animationTypes.CLEAR then
                     self:changeState(self.gameState.FALLING)
                 elseif animation.type == self.animationTypes.GRAVITY then
@@ -147,6 +162,8 @@ function Game:changeState(newState)
     elseif newState == self.gameState.FALLING then
         local modifications = applyGravity(self.board)
         self:startGravityAnimation(modifications) 
+    elseif newState == self.gameState.INVALID_SWAP then
+        self:startSwapAnimation(self.invalid_match.tile1,self.invalid_match.tile2, "invalid")
     end
 
     if debugMode and debugModeSettings.showStateChanges then
@@ -201,9 +218,8 @@ function Game:drawBackground()
 
 end
 
-function Game:startSwapAnimation(tile1, tile2)
-    print("SWAP")
-
+function Game:startSwapAnimation(tile1, tile2, purpose)
+    print(purpose)
     local x1 = tile1.x
     local y1 = tile1.y
 
@@ -227,7 +243,8 @@ function Game:startSwapAnimation(tile1, tile2)
         endX = x2,
         endY = y2,
         time = 0,
-        duration = duration
+        duration = duration,
+        purpose = purpose
     })
     table.insert(self.animations, {
         type = self.animationTypes.SWAP,
@@ -237,7 +254,8 @@ function Game:startSwapAnimation(tile1, tile2)
         endX = x1,
         endY = y1,
         time = 0,
-        duration = duration
+        duration = duration,
+        purpose = purpose
     })
 end
 
@@ -329,16 +347,21 @@ function Game:mousemoved(x, y, dx, dy)
 
         if target.x >= 1 and target.x <= self.board.width
         and target.y >= 1 and target.y <= self.board.height then
-            self:startSwapAnimation(self.selectedTile,target)
+            self:startSwapAnimation(self.selectedTile,target,"normal")
             self.state = self.gameState.SWAPPING
             local valid = swapGems(self.board,self.selectedTile,target)
 
             if valid then
                 self.combos = 1
             else
+                self.invalid_match = {
+                    tile1 = self.selectedTile,
+                    tile2 = target
+                }
                 self.combos = 0
             end
         end
+
         self.selectedTile = nil
     end
 end

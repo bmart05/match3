@@ -13,11 +13,6 @@ function swapGems(board, swapper, swapped) --swapper is the gem to be moved, swa
     if swapperValid or swappedValid then
         return true
     else --if the swap does not create a valid match, return the board to its original state
-        --swap tiles back
-        local swapperTile = board:getTile(swapper.x, swapper.y)
-        board.tiles[swapper.x][swapper.y] = board:getTile(swapped.x,swapped.y)
-        board.tiles[swapped.x][swapped.y] = swapperTile
-
         return false
     end
 end
