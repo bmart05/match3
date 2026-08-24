@@ -3,6 +3,8 @@ debugMode = false
 require "Game"
 
 function love.load()
+    love.graphics.setDefaultFilter("nearest", "nearest")
+    
     game = Game()
 end
 

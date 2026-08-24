@@ -33,6 +33,11 @@ function Game:new()
 
     self.animations = {}
     self.state = self.gameState.WAITING
+
+    self.backgroundCanvas = love.graphics.newCanvas(
+        love.graphics.getWidth(),
+        love.graphics.getHeight()
+    )
 end
 
 function Game:update(dt)
@@ -64,9 +69,7 @@ function Game:update(dt)
 end
 
 function Game:draw()
-    local borderPadding = 10
-    love.graphics.setColor(1,1,1)
-    love.graphics.rectangle("line",self.origin.x-borderPadding,self.origin.y-borderPadding,self.board.width*self.cellSize+borderPadding*2, self.board.height*self.cellSize+borderPadding*2)
+    self:drawBackground()
 
     --draw gems
     for i = 1, self.board.width do
@@ -75,9 +78,7 @@ function Game:draw()
             
             if gem then -- if not null
                 if not gem.animating then
-
-                    local radius = self.cellSize/2
-                    self:drawGem(gem,i,j, radius)
+                    self:drawGem(gem,i,j,1)
 
                     if debugMode then
                         love.graphics.setColor(0,0,0)
@@ -91,24 +92,20 @@ function Game:draw()
     --draw animated gems
     if #self.animations > 0 then
         for _, anim in ipairs(self.animations) do
-            local progress = anim.time/anim.duration
+            local progress = math.min(anim.time/anim.duration,1)
             if anim.type == self.animationTypes.SWAP then
                 local x = anim.startX + (anim.endX - anim.startX) * progress
                 local y = anim.startY + (anim.endY - anim.startY) * progress
 
-                local radius = self.cellSize/2
-
-                self:drawGem(anim.gem, x, y, radius)
+                self:drawGem(anim.gem, x, y, 1)
             elseif anim.type == self.animationTypes.GRAVITY then
                 local y = anim.startY + (anim.endY - anim.startY) * progress
 
-                local radius = self.cellSize/2
-
-                self:drawGem(anim.gem, anim.startX, y, radius)
+                self:drawGem(anim.gem, anim.startX, y, 1)
             elseif anim.type == self.animationTypes.CLEAR then
-                local radius = (self.cellSize/2) * (1-progress)
+                local scaleFactor = 1 - progress
 
-                self:drawGem(anim.gem, anim.startX, anim.startY, radius)
+                self:drawGem(anim.gem, anim.startX, anim.startY, scaleFactor)
             end
         end
     end
@@ -128,17 +125,48 @@ function Game:changeState(newState)
     self.state = newState
 end
 
-function Game:drawGem(gem, x, y, radius)
+function Game:drawGem(gem, x, y, scaleFactor)
     if not gem then
         print("No gem found at "..tostring(x)..","..tostring(y))
     end
-    local colour = Gem.colorValues[gem.color]
-    love.graphics.setColor(colour) 
 
-    local posX = (x - 1) * self.cellSize + (self.cellSize/2) + self.origin.x
-    local posY = (y - 1) * self.cellSize + (self.cellSize/2) + self.origin.y
+    local image = Gem.sprites[gem.color]
 
-    love.graphics.ellipse("fill",posX,posY,radius,radius)
+    local posX = (x - 1) * self.cellSize + self.origin.x
+    local posY = (y - 1) * self.cellSize + self.origin.y
+
+    local scaleX = (self.cellSize / image:getWidth()) * scaleFactor
+    local scaleY = (self.cellSize / image:getHeight()) * scaleFactor
+
+    love.graphics.draw(
+        image,
+        posX + self.cellSize/2,
+        posY + self.cellSize/2,
+        0,
+        scaleX,
+        scaleY,
+        image:getWidth()/2,
+        image:getHeight()/2
+    )
+end
+
+function Game:drawBackground()
+    love.graphics.setCanvas(self.backgroundCanvas)
+
+    love.graphics.setBackgroundColor(0,0,1)
+
+    --draw board background
+    local borderPadding = 10
+    love.graphics.setColor(1,1,1)
+    love.graphics.rectangle("line",self.origin.x-borderPadding,self.origin.y-borderPadding,self.board.width*self.cellSize+borderPadding*2, self.board.height*self.cellSize+borderPadding*2) --border
+    love.graphics.setColor(0.06640625,0.06640625,0.515625) --17,17,132
+    love.graphics.rectangle("fill",self.origin.x-borderPadding,self.origin.y-borderPadding,self.board.width*self.cellSize+borderPadding*2, self.board.height*self.cellSize+borderPadding*2) --backdrop
+
+    love.graphics.setCanvas() --stop drawing to canvas
+
+    love.graphics.setColor(1,1,1) --reset color
+    love.graphics.draw(self.backgroundCanvas,0,0)
+
 end
 
 function Game:startSwapAnimation(tile1, tile2)
