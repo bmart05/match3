@@ -62,7 +62,7 @@ function calculateGravity(board, x)
     local column = {} --this acts like a stack, storing all of the gems in the column from top to bottom
     local missing = 0 --no missing tiles in column
 
-    local duration = 0.3 --animation duration (needs moving)
+    local duration = 0.2 --animation duration (needs moving)
 
     for y=1,board.width do
         local gem = board:getTile(x, y)

@@ -3,6 +3,7 @@ require "Gem"
 require "Matcher"
 require "Clearer"
 require "Swapper"
+require "Audio"
 
 Game = Object:extend()
 
@@ -42,8 +43,7 @@ function Game:new()
         love.graphics.getHeight()
     )
 
-    local music = love.audio.newSource("resources/audio/bg.mp3","stream")
-    love.audio.play(music)
+    Audio:playMusic(Audio.Music.BG)
 end
 
 function Game:update(dt)
@@ -55,6 +55,7 @@ function Game:update(dt)
                 print("-----------------")
                 print("Number of combos: "..tostring(self.combos))
             end
+
             if self.combos >= 1 then
                 self.combos = self.combos + 1 
             else
@@ -72,6 +73,11 @@ function Game:update(dt)
         if animation.time > animation.duration then
             animation.gem.animating = false --reset gem
             table.remove(self.animations, i)
+            
+            if animation.type == self.animationTypes.GRAVITY then
+                Audio:playSFX(Audio.SFX.GEM_FALL)
+            end
+
             if #self.animations == 0 then
                 if animation.type == self.animationTypes.SWAP then --this should probably be moved into a function
                     if animation.purpose == "normal" then
@@ -145,16 +151,20 @@ function Game:draw()
 end
 
 function Game:changeState(newState)
-    
+    if debugMode and debugModeSettings.showStateChanges then
+        print("-----------------")
+        print("State is changing from "..self.state.." to "..newState)
+    end
+
+    self.state = newState
+
     if newState == self.gameState.CLEARING then
         if self.combos <= 0 then
             self:changeState(self.gameState.WAITING)
             return
         end
 
-        local sourceIndex = math.min(self.combos,6)
-        local source = Gem.matchSFX[sourceIndex]
-        love.audio.play(source)
+        Audio:playMatch(self.combos)
 
         local matches = findMatches(self.board)
         local clearedGems = clearGems(self.board, matches)
@@ -163,15 +173,11 @@ function Game:changeState(newState)
         local modifications = applyGravity(self.board)
         self:startGravityAnimation(modifications) 
     elseif newState == self.gameState.INVALID_SWAP then
+        Audio:playSFX(Audio.SFX.INVALID_SWAP)
         self:startSwapAnimation(self.invalid_match.tile1,self.invalid_match.tile2, "invalid")
     end
 
-    if debugMode and debugModeSettings.showStateChanges then
-        print("-----------------")
-        print("State is changing from "..self.state.." to "..newState)
-    end
-
-    self.state = newState
+    
 end
 
 function Game:drawGem(gem, x, y, scaleFactor)
@@ -219,7 +225,6 @@ function Game:drawBackground()
 end
 
 function Game:startSwapAnimation(tile1, tile2, purpose)
-    print(purpose)
     local x1 = tile1.x
     local y1 = tile1.y
 
@@ -314,8 +319,9 @@ function Game:mousemoved(x, y, dx, dy)
     if not self.selectedTile then --do not attempt to swap if no tile is clicked
         return
     end
-
-    if not self.state == self.gameState.WAITING then --player should not be able to move tiles while not in waiting state
+    
+    if not (self.state == self.gameState.WAITING) then --player should not be able to move tiles while not in waiting state
+        print("Not in waiting")
         return
     end
 
@@ -347,6 +353,7 @@ function Game:mousemoved(x, y, dx, dy)
 
         if target.x >= 1 and target.x <= self.board.width
         and target.y >= 1 and target.y <= self.board.height then
+            Audio:playSFX(Audio.SFX.SWAP)
             self:startSwapAnimation(self.selectedTile,target,"normal")
             self.state = self.gameState.SWAPPING
             local valid = swapGems(self.board,self.selectedTile,target)

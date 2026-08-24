@@ -1,11 +1,11 @@
 Object = require "classic"
 debugMode = true
 debugModeSettings = {
-    showMatches = false,
-    showClearances = false,
+    showMatches = true,
+    showClearances = true,
     showMissingGems = false,
     showStateChanges = true,
-    showCombos = true,
+    showCombos = false,
     showGemSelected = false,
     showCoordinates = false
 }

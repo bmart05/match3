@@ -29,15 +29,6 @@ Gem.sprites = {
   ['orange'] = love.graphics.newImage("resources/sprites/gems/orange_gem.png")
 }
 
-Gem.matchSFX = {
-  love.audio.newSource("resources/audio/match.ogg", "static"),
-  love.audio.newSource("resources/audio/combo_1.ogg", "static"),
-  love.audio.newSource("resources/audio/combo_2.ogg", "static"),
-  love.audio.newSource("resources/audio/combo_3.ogg", "static"),
-  love.audio.newSource("resources/audio/combo_4.ogg", "static"),
-  love.audio.newSource("resources/audio/combo_5.ogg", "static")
-}
-
 for _, image in pairs(Gem.sprites) do
     image:setFilter("nearest", "nearest")
 end
