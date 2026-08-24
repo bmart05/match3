@@ -73,12 +73,16 @@ function findMatches(board)
         end
     end
 
-    if #matches > 0 then
-        print("Found matches are:")
-        for i, match in ipairs(matches) do
-            print("Match "..tostring(i))
-            for _, coord in ipairs(match) do
-                print(tostring(coord.x)..","..tostring(coord.y))
+    --debug to show matches
+    if debugMode and debugModeSettings.showMatches then
+        if #matches > 0 then
+            print("-----------------")
+            print("Found matches are:")
+            for i, match in ipairs(matches) do
+                print("Match "..tostring(i))
+                for _, coord in ipairs(match) do
+                    print(tostring(coord.x)..","..tostring(coord.y))
+                end
             end
         end
     end

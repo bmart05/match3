@@ -1,9 +1,6 @@
 
 Gem = Object:extend()
 
-Gem.type = {
-
-}
 
 Gem.colors = {
   'red',
@@ -24,12 +21,21 @@ Gem.colorValues = {
 }
 
 Gem.sprites = {
-  ['red'] = love.graphics.newImage("resources/gems/red_gem.png"),
-  ['green'] = love.graphics.newImage("resources/gems/green_gem.png"),
-  ['blue'] = love.graphics.newImage("resources/gems/blue_gem.png"),
-  ['yellow'] = love.graphics.newImage("resources/gems/yellow_gem.png"),
-  ['purple'] = love.graphics.newImage("resources/gems/purple_gem.png"),
-  ['orange'] = love.graphics.newImage("resources/gems/orange_gem.png")
+  ['red'] = love.graphics.newImage("resources/sprites/gems/red_gem.png"),
+  ['green'] = love.graphics.newImage("resources/sprites/gems/green_gem.png"),
+  ['blue'] = love.graphics.newImage("resources/sprites/gems/blue_gem.png"),
+  ['yellow'] = love.graphics.newImage("resources/sprites/gems/yellow_gem.png"),
+  ['purple'] = love.graphics.newImage("resources/sprites/gems/purple_gem.png"),
+  ['orange'] = love.graphics.newImage("resources/sprites/gems/orange_gem.png")
+}
+
+Gem.matchSFX = {
+  love.audio.newSource("resources/audio/match.ogg", "static"),
+  love.audio.newSource("resources/audio/combo_1.ogg", "static"),
+  love.audio.newSource("resources/audio/combo_2.ogg", "static"),
+  love.audio.newSource("resources/audio/combo_3.ogg", "static"),
+  love.audio.newSource("resources/audio/combo_4.ogg", "static"),
+  love.audio.newSource("resources/audio/combo_5.ogg", "static")
 }
 
 for _, image in pairs(Gem.sprites) do

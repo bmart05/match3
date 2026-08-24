@@ -16,9 +16,12 @@ function clearGems(board, matches)
         end
     end
 
-    print("Clearing gems at:")
-    for _, gem in ipairs(clearedGems) do
-        print(tostring(gem.x)..","..tostring(gem.y))
+    if debugMode and debugModeSettings.showClearances then
+        print("-----------------")
+        print("Clearing gems at:")
+        for _, gem in ipairs(clearedGems) do
+            print(tostring(gem.x)..","..tostring(gem.y))
+        end
     end
 
     return clearedGems
@@ -37,9 +40,11 @@ function applyGravity(board)
             end
         end
 
-        
         if missingGems then --apply gravity if missing gems found
-            print(tostring(x).." is missing gems")
+            if debugMode and debugModeSettings.showMissingGems then
+                print("-----------------")
+                print("Column "..tostring(x).." is missing gems")
+            end
             local modifications, newGems = calculateGravity(board, x) --calculate gravity for column
             table.insert(columnModifications,modifications)
             table.insert(columnModifications,newGems)

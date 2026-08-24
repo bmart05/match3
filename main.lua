@@ -1,5 +1,14 @@
 Object = require "classic"
-debugMode = false
+debugMode = true
+debugModeSettings = {
+    showMatches = false,
+    showClearances = false,
+    showMissingGems = false,
+    showStateChanges = true,
+    showCombos = true,
+    showGemSelected = false,
+    showCoordinates = false
+}
 require "Game"
 
 function love.load()

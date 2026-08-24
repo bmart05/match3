@@ -29,21 +29,38 @@ function Game:new()
     self.cellSize = 50
 
     self.selectedTile = nil
+    self.target = nil
     self.dragStart = {}
 
     self.animations = {}
     self.state = self.gameState.WAITING
 
+    self.combos = 0
+
     self.backgroundCanvas = love.graphics.newCanvas(
         love.graphics.getWidth(),
         love.graphics.getHeight()
     )
+
+    local music = love.audio.newSource("resources/audio/bg.mp3","stream")
+    love.audio.play(music)
 end
 
 function Game:update(dt)
     if self.state == self.gameState.WAITING then --gems should never be cleared while the game is doing something else
         local matches = findMatches(self.board)
         if #matches > 0 then
+            
+            if debugMode and debugModeSettings.showCombos then
+                print("-----------------")
+                print("Number of combos: "..tostring(self.combos))
+            end
+            if self.combos >= 1 then
+                self.combos = self.combos + 1 
+            else
+                self.combos = 1
+            end
+
             self:changeState(self.gameState.CLEARING)
         end
     end
@@ -80,9 +97,10 @@ function Game:draw()
                 if not gem.animating then
                     self:drawGem(gem,i,j,1)
 
-                    if debugMode then
+                    if debugMode and debugModeSettings.showCoordinates then
                         love.graphics.setColor(0,0,0)
                         love.graphics.print(tostring(i) .. "," .. tostring(j), i*self.cellSize,j*self.cellSize)
+                        love.graphics.setColor(1,1,1)
                     end
                 end
             end
@@ -112,14 +130,28 @@ function Game:draw()
 end
 
 function Game:changeState(newState)
-    print(newState)
+    
     if newState == self.gameState.CLEARING then
+        if self.combos <= 0 then
+            self:changeState(self.gameState.WAITING)
+            return
+        end
+
+        local sourceIndex = math.min(self.combos,6)
+        local source = Gem.matchSFX[sourceIndex]
+        love.audio.play(source)
+
         local matches = findMatches(self.board)
         local clearedGems = clearGems(self.board, matches)
         self:startClearAnimation(clearedGems)
     elseif newState == self.gameState.FALLING then
         local modifications = applyGravity(self.board)
         self:startGravityAnimation(modifications) 
+    end
+
+    if debugMode and debugModeSettings.showStateChanges then
+        print("-----------------")
+        print("State is changing from "..self.state.." to "..newState)
     end
 
     self.state = newState
@@ -170,6 +202,8 @@ function Game:drawBackground()
 end
 
 function Game:startSwapAnimation(tile1, tile2)
+    print("SWAP")
+
     local x1 = tile1.x
     local y1 = tile1.y
 
@@ -241,7 +275,11 @@ function Game:mousepressed(x, y, button)
 
         if column >= 1 and column <= self.board.width
         and row >= 1 and row <= self.board.height then
-            print("Gem selected at: " .. tostring(column) .. ", " .. tostring(row))
+
+            if debugMode and debugModeSettings.showGemSelected then
+                print("-----------------")
+                print("Gem selected at: " .. tostring(column) .. ", " .. tostring(row))
+            end
             self.selectedTile = {
                 x = column,
                 y = row
@@ -291,11 +329,16 @@ function Game:mousemoved(x, y, dx, dy)
 
         if target.x >= 1 and target.x <= self.board.width
         and target.y >= 1 and target.y <= self.board.height then
-            print("Swap started")
             self:startSwapAnimation(self.selectedTile,target)
             self.state = self.gameState.SWAPPING
-            _ = swapGems(self.board,self.selectedTile,target)
-            self.selectedTile = nil
+            local valid = swapGems(self.board,self.selectedTile,target)
+
+            if valid then
+                self.combos = 1
+            else
+                self.combos = 0
+            end
         end
+        self.selectedTile = nil
     end
 end
