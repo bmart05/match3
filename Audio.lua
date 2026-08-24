@@ -26,8 +26,14 @@ function Audio:playMusic(music)
     end
 end
 
-function Audio:playSFX(sfx) 
+function Audio:playSFX(sfx)
+
     local success = love.audio.play(sfx)
+
+    if debugMode and debugModeSettings.showAudioEvents then
+        print("-----------------")
+        print("Playing SFX "..tostring(sfx))
+    end
 
     if not success then
         print("ERROR: Failed to play sound effect: "..tostring(sfx))

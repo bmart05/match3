@@ -43,7 +43,9 @@ function Game:new()
         love.graphics.getHeight()
     )
 
-    Audio:playMusic(Audio.Music.BG)
+    if playMusic then
+        Audio:playMusic(Audio.Music.BG)
+    end
 end
 
 function Game:update(dt)
@@ -74,9 +76,9 @@ function Game:update(dt)
             animation.gem.animating = false --reset gem
             table.remove(self.animations, i)
             
-            if animation.type == self.animationTypes.GRAVITY then
-                Audio:playSFX(Audio.SFX.GEM_FALL)
-            end
+            -- if animation.type == self.animationTypes.GRAVITY then
+            --     Audio:playSFX(Audio.SFX.GEM_FALL)
+            -- end
 
             if #self.animations == 0 then
                 if animation.type == self.animationTypes.SWAP then --this should probably be moved into a function
@@ -99,6 +101,7 @@ function Game:update(dt)
                 elseif animation.type == self.animationTypes.CLEAR then
                     self:changeState(self.gameState.FALLING)
                 elseif animation.type == self.animationTypes.GRAVITY then
+                    Audio:playSFX(Audio.SFX.GEM_FALL)
                     self:changeState(self.gameState.WAITING)
                 end
             end
@@ -119,8 +122,8 @@ function Game:draw()
                     self:drawGem(gem,i,j,1)
 
                     if debugMode and debugModeSettings.showCoordinates then
-                        love.graphics.setColor(0,0,0)
-                        love.graphics.print(tostring(i) .. "," .. tostring(j), i*self.cellSize,j*self.cellSize)
+                        love.graphics.setColor(1,1,1)
+                        love.graphics.print(tostring(i) .. "," .. tostring(j), (i-1)*self.cellSize+self.origin.x,(j-1)*self.cellSize+self.origin.y)
                         love.graphics.setColor(1,1,1)
                     end
                 end
@@ -146,10 +149,18 @@ function Game:draw()
 
                 self:drawGem(anim.gem, anim.startX, anim.startY, scaleFactor)
             end
+
+            if debugMode and debugModeSettings.showAnimations then
+                local x1 = anim.startX or 0
+                local x2 = anim.endX or 0
+                local y1 = anim.startY or 0
+                local y2 = anim.endY or 0
+
+                love.graphics.line(x1,y1,x2,y2)
+            end
         end
     end
 end
-
 function Game:changeState(newState)
     if debugMode and debugModeSettings.showStateChanges then
         print("-----------------")
@@ -319,7 +330,7 @@ function Game:mousemoved(x, y, dx, dy)
     if not self.selectedTile then --do not attempt to swap if no tile is clicked
         return
     end
-    
+
     if not (self.state == self.gameState.WAITING) then --player should not be able to move tiles while not in waiting state
         print("Not in waiting")
         return
