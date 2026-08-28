@@ -1,14 +1,14 @@
 Object = require "classic"
 debugMode = true
-playMusic = false
+playMusic = true
 debugModeSettings = {
-    showMatches = false,
+    showMatches = true,
     showClearances = false,
     showMissingGems = false,
     showStateChanges = true,
     showCombos = true,
     showGemSelected = false,
-    showCoordinates = false,
+    showCoordinates = true,
     showAudioEvents = true,
     showAnimations = false
 }

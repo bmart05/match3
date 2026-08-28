@@ -8,7 +8,6 @@ Gem.colors = {
   'blue',
   'yellow',
   'purple',
-  'orange'
 }
 
 Gem.colorValues = {

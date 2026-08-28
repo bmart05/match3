@@ -1,6 +1,11 @@
 require "Board"
 require "Gem"
 
+MATCH_SHAPES = {
+
+}
+
+
 function findMatches(board)
     local tiles = board.tiles
 
@@ -14,7 +19,8 @@ function findMatches(board)
 
     for x=1,board.width do
         for y=1,board.height do
-            if not containsCoord(matches,x,y) then
+            local matchIndex, found = containsCoord(matches,x,y)
+            if not found then
                 --this calculates the total matching tiles in each direction
                 local left = checkMatch(board,x,y,'left') 
                 local right = checkMatch(board,x,y,'right')
@@ -50,6 +56,7 @@ function findMatches(board)
                     --NOTE: This code does not properly consider crossed matches and needs to be fixed in the future if that is wanted
                     --check for duplicates incase of cross matches
                     local duplicates = {} --stores the index of any duplicates
+                    local combineMatchIndex = nil
                     for i=#coords,1,-1 do
                         local coord1 = coords[i]
                         for j, coord2 in ipairs(coords) do --is there duplicates inside the set
@@ -58,8 +65,10 @@ function findMatches(board)
                             end
                         end
 
-                        if containsCoord(matches, coord1.x,coord1.y) then
-                            table.insert(duplicates, i)
+                        local matchIndex, found = containsCoord(matches,coord1.x,coord1.y)
+                        if found then --if another match contains the same coordinates
+                            table.insert(duplicates, i) --remove the duplicate coordinate
+                            combineMatchIndex = matchIndex --set index to combine with
                         end
                     end
 
@@ -67,7 +76,18 @@ function findMatches(board)
                         table.remove(coords, i)
                     end
 
-                    table.insert(matches,coords)
+                    if combineMatchIndex then
+                        local matchToCombine = matches[combineMatchIndex]
+                        table.remove(matches, combineMatchIndex) -- remove from table to prevent duplicate matches
+
+                        for _, coord in ipairs(coords) do
+                            table.insert(matchToCombine, coord) --insert coord from new table into old one
+                        end
+                        
+                        table.insert(matches, matchToCombine) --reinsert combined table into matches
+                    else --if there is no match to combine, insert coords into matches
+                        table.insert(matches,coords)
+                    end
                 end
             end
         end
@@ -83,6 +103,8 @@ function findMatches(board)
                 for _, coord in ipairs(match) do
                     print(tostring(coord.x)..","..tostring(coord.y))
                 end
+                print("Normalised coordinates:")
+                checkShapes(match)
             end
         end
     end
@@ -121,16 +143,50 @@ function checkMatch(board, x, y, direction)
     end
 end
 
+function checkShapes(match)
+    local normalisedCoordinates = normaliseCoordinates(match)
+
+    for _, coord in ipairs(normalisedCoordinates) do
+        print(tostring(coord.x)..","..tostring(coord.y))
+    end
+end
+
 function containsCoord(matches, x, y)
-    for _, match in ipairs(matches) do
+    for i, match in ipairs(matches) do
         for _, coord in ipairs(match) do
 
             if coord.x == x and coord.y == y then
-                return true
+                return i, true
             end
 
         end
     end
 
-    return false
+    return nil, false
+end
+
+function normaliseCoordinates(coords) 
+    --find min x and y
+    local minX = coords[1].x
+    local minY = coords[1].y
+
+    for _, coord in ipairs(coords) do
+        if coord.x < minX then
+            minX = coord.x
+        end
+
+        if coord.y < minY then
+            minY = coord.y
+        end
+    end
+
+    --subtract that from each coordinate
+    local newCoords = {}
+    for _, coord in ipairs(coords) do
+        local x = coord.x - minX
+        local y = coord.y - minY
+        table.insert(newCoords,{x=x,y=y})
+    end
+
+    return newCoords
 end
