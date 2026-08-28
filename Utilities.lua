@@ -22,3 +22,7 @@ function foundInTable(table, item)
     end
     return nil
 end
+
+function coordinateToString(coordinate) 
+    return tostring(coordinate.x)..","..tostring(coordinate.y)
+end

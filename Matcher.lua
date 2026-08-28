@@ -1,8 +1,11 @@
 require "Board"
 require "Gem"
+require "Utilities"
 
-MATCH_SHAPES = {
-
+SPECIAL_MATCHES = {
+    FOUR_GEM = "FOUR_GEM",
+    FIVE_GEM = "FIVE_GEM",
+    INTERSECTION = "INTERSECTION"
 }
 
 
@@ -16,6 +19,7 @@ function findMatches(board)
     --once no adjacent gems can be found, match is complete
 
     local matches = {}
+    local specialGems = {}
 
     for x=1,board.width do
         for y=1,board.height do
@@ -36,7 +40,7 @@ function findMatches(board)
                     for k=left,1,-1 do
                         table.insert(coords,{x=x-k,y=y}) --insert left tiles first
                     end    
-                     table.insert(coords,{x=x,y=y}) --insert the origin tile
+                    table.insert(coords,{x=x,y=y}) --insert the origin tile
                     for k=1,right do
                         table.insert(coords,{x=x+k,y=y}) --insert right tiles last
                     end    
@@ -93,6 +97,8 @@ function findMatches(board)
         end
     end
 
+    
+    
     --debug to show matches
     if debugMode and debugModeSettings.showMatches then
         if #matches > 0 then
@@ -101,15 +107,23 @@ function findMatches(board)
             for i, match in ipairs(matches) do
                 print("Match "..tostring(i))
                 for _, coord in ipairs(match) do
-                    print(tostring(coord.x)..","..tostring(coord.y))
+                    print(coordinateToString(coord))
                 end
-                print("Normalised coordinates:")
-                checkShapes(match)
+            end
+        end
+    end
+    
+    --calculate special matches
+    if #matches > 0 then
+        for i, match in ipairs(matches) do
+            local special = calculateSpecialGems(match)
+            if special then
+                table.insert(specialGems,special)
             end
         end
     end
 
-    return matches
+    return matches, specialGems
 end
 
 function checkMatch(board, x, y, direction)
@@ -143,12 +157,83 @@ function checkMatch(board, x, y, direction)
     end
 end
 
-function checkShapes(match)
-    local normalisedCoordinates = normaliseCoordinates(match)
+function calculateSpecialGems(match)
+    local grid, width, height = createMatchGrid(match) --stores normalised coordinates from match, ranging from 0->max x and y
 
-    for _, coord in ipairs(normalisedCoordinates) do
-        print(tostring(coord.x)..","..tostring(coord.y))
+    local horizontalRuns = {}
+    local verticalRuns = {}
+
+    local gemsMatched = 0
+
+    --check horizontal runs
+    for i=1,height do --for every row
+        local row = {}
+        local valid = true
+        for j=1,width do
+            if grid[i][j] == 1 then
+                table.insert(row, grid[i][j])
+            else
+                valid = false
+                break
+            end
+        end
+        if valid and #row >= 3 then
+            table.insert(horizontalRuns,row)
+            gemsMatched = gemsMatched + #row
+        end
     end
+
+    --check vertical runs
+    for i=1,width do --for every row
+        local column = {}
+        local valid = true
+        for j=1,height do
+            if grid[j][i] == 1 then
+                table.insert(column, grid[j][i])
+            else
+                valid = false
+                break
+            end
+        end
+        if valid and #column >= 3 then
+            table.insert(verticalRuns,column)
+
+            gemsMatched = gemsMatched + #column
+        end
+    end
+
+
+    if debugMode and debugModeSettings.showMatchShape then
+        print("-----------------")
+        print("Match shape: ")
+        for _, i in ipairs(grid) do local row = "" for _, j in ipairs(i) do row = row..tostring(j) end print(row) end
+        print("Gems matched: "..tostring(gemsMatched))
+        print("Horizontal runs: "..tostring(#horizontalRuns))
+        print("Vertical runs: "..tostring(#verticalRuns))
+    end
+
+    if gemsMatched == 4 and (#horizontalRuns == 0 or #verticalRuns == 0) then --if 4 gems have been matched, and match is only in one direction
+        return {
+            type = SPECIAL_MATCHES.FOUR_GEM,
+            position = match[1] --this should be changed to the middle of the match, where it originates from
+        }
+    end
+
+    if gemsMatched == 5 and (#horizontalRuns == 0 or #verticalRuns == 0) then --if 5 gems have been matched, and match is only in one direction
+        return {
+            type = SPECIAL_MATCHES.FIVE_GEM,
+            position = match[1] --this should be changed to the middle of the match, where it originates from
+        }
+    end
+
+    if #horizontalRuns > 0 and #verticalRuns > 0 then --if match is in both directions, match must intersect
+        return {
+            type = SPECIAL_MATCHES.INTERSECTION,
+            position = match[1] --this should be changed to the middle of the match, where it originates from
+        }
+    end
+
+    return nil
 end
 
 function containsCoord(matches, x, y)
@@ -165,10 +250,13 @@ function containsCoord(matches, x, y)
     return nil, false
 end
 
-function normaliseCoordinates(coords) 
-    --find min x and y
+function createMatchGrid(coords) 
+    --find min and max x and y
     local minX = coords[1].x
     local minY = coords[1].y
+    local maxX = coords[1].x
+    local maxY = coords[1].y
+
 
     for _, coord in ipairs(coords) do
         if coord.x < minX then
@@ -178,15 +266,40 @@ function normaliseCoordinates(coords)
         if coord.y < minY then
             minY = coord.y
         end
-    end
 
-    --subtract that from each coordinate
-    local newCoords = {}
+        if coord.x > maxX then
+            maxX = coord.x
+        end
+
+        if coord.y > maxY then
+            maxY = coord.y
+        end
+    end
+    --subtract that from each coordinate to get normalised coordinates
+    local normalisedCoords = {}
     for _, coord in ipairs(coords) do
         local x = coord.x - minX
         local y = coord.y - minY
-        table.insert(newCoords,{x=x,y=y})
+        table.insert(normalisedCoords,{x=x,y=y})
     end
 
-    return newCoords
+    --create empty grid from maxX and Y
+    local width = maxX - minX + 1
+    local height = maxY - minY + 1
+    
+    local grid = {}
+    for i=1,height do
+        local row = {}
+        for j=1,width do
+            table.insert(row,0)
+        end
+        table.insert(grid, row)
+    end
+
+    --apply normalised coordinates to grid
+    for _, coord in ipairs(normalisedCoords) do
+        grid[coord.y+1][coord.x+1] = 1
+    end
+
+    return grid, width, height
 end

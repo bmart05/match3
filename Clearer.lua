@@ -1,5 +1,6 @@
 require "Matcher"
 require "Gem"
+require "Utilities"
 
 function clearGems(board, matches)
     local clearedGems = {}
@@ -20,7 +21,7 @@ function clearGems(board, matches)
         print("-----------------")
         print("Clearing gems at:")
         for _, gem in ipairs(clearedGems) do
-            print(tostring(gem.x)..","..tostring(gem.y))
+            print(coordinateToString(gem))
         end
     end
 

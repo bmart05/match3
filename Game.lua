@@ -4,6 +4,7 @@ require "Matcher"
 require "Clearer"
 require "Swapper"
 require "Audio"
+require "Utilities"
 
 Game = Object:extend()
 
@@ -50,7 +51,7 @@ end
 
 function Game:update(dt)
     if self.state == self.gameState.WAITING then --gems should never be cleared while the game is doing something else
-        local matches = findMatches(self.board)
+        local matches, _ = findMatches(self.board)
         if #matches > 0 then
             
             if debugMode and debugModeSettings.showCombos then
@@ -175,10 +176,21 @@ function Game:changeState(newState)
             return
         end
 
-        Audio:playMatch(self.combos)
+        Audio:playMatch(self.combos) --play match sound based on number of combos
 
-        local matches = findMatches(self.board)
+        --calculate matches and special gems to be spawned
+        local matches, specials = findMatches(self.board)
+
+        if debugMode and debugModeSettings.showSpecialGems then
+            print("-----------------")
+            for _, special in ipairs(specials) do
+                print(special.type.." found at "..coordinateToString(special.position))
+            end
+        end
+
+        --clear gems from matches
         local clearedGems = clearGems(self.board, matches)
+
         self:startClearAnimation(clearedGems)
     elseif newState == self.gameState.FALLING then
         local modifications = applyGravity(self.board)

@@ -1,8 +1,10 @@
 Object = require "classic"
 debugMode = true
-playMusic = true
+playMusic = false
 debugModeSettings = {
     showMatches = true,
+    showMatchShape = false,
+    showSpecialGems = false,
     showClearances = false,
     showMissingGems = false,
     showStateChanges = true,
