@@ -215,21 +215,21 @@ function calculateSpecialGems(match)
     if gemsMatched == 4 and (#horizontalRuns == 0 or #verticalRuns == 0) then --if 4 gems have been matched, and match is only in one direction
         return {
             type = SPECIAL_MATCHES.FOUR_GEM,
-            position = match[1] --this should be changed to the middle of the match, where it originates from
+            position = match[math.floor((#match+1)/2)]
         }
     end
 
     if gemsMatched == 5 and (#horizontalRuns == 0 or #verticalRuns == 0) then --if 5 gems have been matched, and match is only in one direction
         return {
             type = SPECIAL_MATCHES.FIVE_GEM,
-            position = match[1] --this should be changed to the middle of the match, where it originates from
+            position = match[math.floor((#match+1)/2)]
         }
     end
 
     if #horizontalRuns > 0 and #verticalRuns > 0 then --if match is in both directions, match must intersect
         return {
             type = SPECIAL_MATCHES.INTERSECTION,
-            position = match[1] --this should be changed to the middle of the match, where it originates from
+            position = match[math.floor((#match+1)/2)]
         }
     end
 

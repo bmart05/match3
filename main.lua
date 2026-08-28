@@ -4,14 +4,14 @@ playMusic = false
 debugModeSettings = {
     showMatches = true,
     showMatchShape = false,
-    showSpecialGems = false,
+    showSpecialGems = true,
     showClearances = false,
     showMissingGems = false,
     showStateChanges = true,
     showCombos = true,
     showGemSelected = false,
     showCoordinates = true,
-    showAudioEvents = true,
+    showAudioEvents = false,
     showAnimations = false
 }
 require "Game"
