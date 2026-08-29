@@ -9,6 +9,7 @@ Audio.SFX = {
     SWAP = love.audio.newSource("resources/audio/swap.ogg", "static"),
     INVALID_SWAP = love.audio.newSource("resources/audio/invalid_swap.ogg", "static"),
     MATCH = love.audio.newSource("resources/audio/match.ogg", "static"),
+    EXPLOSION = love.audio.newSource("resources/audio/explosion.ogg", "static"),
     COMBOS = {
         love.audio.newSource("resources/audio/combo_1.ogg", "static"),
         love.audio.newSource("resources/audio/combo_2.ogg", "static"),

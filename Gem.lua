@@ -2,6 +2,13 @@
 Gem = Object:extend()
 
 
+Gem.types = {
+  REGULAR = "REGULAR",
+  FIRE = "FIRE",
+  LIGHTNING = "LIGHTNING",
+  BOMB = "BOMB"
+}
+
 Gem.colors = {
   'red',
   'green',
@@ -35,5 +42,6 @@ end
 function Gem:new(color) --in future this will include special gems, and gem sprites (maybe)
   self.color = color
   self.animating = false
+  self.type = self.types.REGULAR
   
 end

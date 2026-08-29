@@ -39,6 +39,8 @@ function Game:new()
 
     self.combos = 0
 
+    self.specials = {}
+
     self.backgroundCanvas = love.graphics.newCanvas(
         love.graphics.getWidth(),
         love.graphics.getHeight()
@@ -180,6 +182,7 @@ function Game:changeState(newState)
 
         --calculate matches and special gems to be spawned
         local matches, specials = findMatches(self.board)
+        self.specials = specials
 
         if debugMode and debugModeSettings.showSpecialGems then
             print("-----------------")
@@ -191,9 +194,15 @@ function Game:changeState(newState)
         --clear gems from matches
         local clearedGems = clearGems(self.board, matches)
 
+        for _, cleared in ipairs(clearedGems) do
+            if cleared.gem.type ~= Gem.types.REGULAR then
+                Audio:playSFX(Audio.SFX.EXPLOSION)
+            end
+        end
+
         self:startClearAnimation(clearedGems)
     elseif newState == self.gameState.FALLING then
-        local modifications = applyGravity(self.board)
+        local modifications = applyGravity(self.board, self.specials)
         self:startGravityAnimation(modifications) 
     elseif newState == self.gameState.INVALID_SWAP then
         Audio:playSFX(Audio.SFX.INVALID_SWAP)
@@ -204,11 +213,20 @@ function Game:changeState(newState)
 end
 
 function Game:drawGem(gem, x, y, scaleFactor)
+
     if not gem then
         print("No gem found at "..tostring(x)..","..tostring(y))
     end
 
     local image = Gem.sprites[gem.color]
+
+    if gem.type == Gem.types.FIRE then
+        love.graphics.setColor(1,0.6470588235,0)
+    end
+    if gem.type == Gem.types.LIGHTNING then
+        love.graphics.setColor(0,0,1)
+    end
+
 
     local posX = (x - 1) * self.cellSize + self.origin.x
     local posY = (y - 1) * self.cellSize + self.origin.y
@@ -226,6 +244,7 @@ function Game:drawGem(gem, x, y, scaleFactor)
         image:getWidth()/2,
         image:getHeight()/2
     )
+    love.graphics.setColor(1,1,1)
 end
 
 function Game:drawBackground()

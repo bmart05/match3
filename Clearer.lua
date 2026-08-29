@@ -6,15 +6,33 @@ function clearGems(board, matches)
     local clearedGems = {}
     for _, match in ipairs(matches) do
         for _, coord in ipairs(match) do
-            local gem = board:getTile(coord.x,coord.y)
-            table.insert(clearedGems, {
-                gem = gem,
-                x = coord.x,
-                y = coord.y
-            })
+            
+            if not foundInCoordTable(clearedGems,coord) then
+                local gem = board:getTile(coord.x,coord.y)
+                table.insert(clearedGems, {
+                    gem = gem,
+                    x = coord.x,
+                    y = coord.y
+                })
 
-            board.tiles[coord.x][coord.y] = nil 
+                
+                if gem.type == Gem.types.FIRE then
+                    --calculate explosion
+                    local cleared = calculateExplosion(board,coord,1)
+                    
+                    for _, clearData in ipairs(cleared) do --add all cleared gems to clearedGems table
+
+                        if not foundInCoordTable(clearedGems,clearData) then
+                            table.insert(clearedGems, clearData)
+                        end
+                    end
+                end
+            end
         end
+    end
+
+    for _, toClear in ipairs(clearedGems) do
+        board.tiles[toClear.x][toClear.y] = nil
     end
 
     if debugMode and debugModeSettings.showClearances then
@@ -28,7 +46,27 @@ function clearGems(board, matches)
     return clearedGems
 end
 
-function applyGravity(board)
+function calculateExplosion(board, pos, radius)
+    local clearedGems = {}
+    for x=(pos.x-radius),(pos.x+radius) do --loop in grid the width of 2 radiuses around pos
+        for y=(pos.y-radius),(pos.y+radius) do
+            if not (x == pos.x and y == pos.y) then
+                print("Clearing at: "..coordinateToString({x=x,y=y}))
+                local gem = board:getTile(x,y)
+                table.insert(clearedGems, {
+                    gem = gem,
+                    x = x,
+                    y = y
+                })
+
+                
+            end
+        end
+    end
+    return clearedGems
+end
+
+function applyGravity(board, specialGems)
     local columnModifications = {}
 
     --determine columns with empty spaces
@@ -42,11 +80,14 @@ function applyGravity(board)
         end
 
         if missingGems then --apply gravity if missing gems found
+            --DEBUG MODE--
             if debugMode and debugModeSettings.showMissingGems then
                 print("-----------------")
                 print("Column "..tostring(x).." is missing gems")
             end
-            local modifications, newGems = calculateGravity(board, x) --calculate gravity for column
+            --DEBUG MODE--
+
+            local modifications, newGems = calculateGravity(board, x, specialGems) --calculate gravity for column
             table.insert(columnModifications,modifications)
             table.insert(columnModifications,newGems)
         end
@@ -55,7 +96,7 @@ function applyGravity(board)
     return columnModifications
 end
 
-function calculateGravity(board, x)
+function calculateGravity(board, x, specialGems)
     local modifications = {} --this stores the new and old positions of all gems that are moved
     local newGems = {} --this stores the spawn and resting position of new gems
     
@@ -99,7 +140,13 @@ function calculateGravity(board, x)
         local gemSpawnPosition = -missing
         for y=1,board.height do 
             if y<=missing then
-                local newGem = Gem(Gem.colors[math.random(#Gem.colors)]) --generate new gem
+                local newGem = Gem(Gem.colors[math.random(#Gem.colors)]) --generate new gem 
+
+                --loop through special gems
+                if specialGems then 
+                    checkSpecialGem(newGem,specialGems,x,y) 
+                end
+            
 
                 board.tiles[x][y] = newGem
                 board.tiles[x][y].animating = true
@@ -110,7 +157,16 @@ function calculateGravity(board, x)
                 newGems[y].endY = y
 
             else
-                board.tiles[x][y] = column[columnPos] --insert next available tile from column
+                
+                local newGem = column[columnPos] --insert next available tile from column
+                
+                --loop through special gems
+                if specialGems then 
+                    checkSpecialGem(newGem,specialGems,x,y) 
+                end
+                
+                
+                board.tiles[x][y] = newGem 
                 modifications[columnPos].endY = y
                 columnPos = columnPos + 1
             end
@@ -118,4 +174,22 @@ function calculateGravity(board, x)
     end
 
     return modifications, newGems -- return animation positions for existing gems
+end
+
+function checkSpecialGem(newGem, specialGems, x, y)
+    for _, special in ipairs(specialGems) do
+        if special.position.x == x and special.position.y == y then --if in the position to spawn a special gem
+            --spawn special gem
+            if special.type == SPECIAL_MATCHES.FOUR_GEM then
+                newGem.type = Gem.types.FIRE
+            end
+            if special.type == SPECIAL_MATCHES.INTERSECTION then
+                newGem.type = Gem.types.LIGHTNING
+            end
+            if special.type == SPECIAL_MATCHES.FIVE_GEM then
+                newGem.type = Gem.types.FIRE
+            end
+            print("Spawning special gem from "..special.type..", creating a "..newGem.type.." at: "..coordinateToString(special.position))
+        end
+    end
 end
