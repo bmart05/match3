@@ -1,7 +1,7 @@
 require "Utilities"
 
 function calculateSpecialGems(match)
-    local grid, width, height = createMatchGrid(match) --stores normalised coordinates from match, ranging from 0->max x and y
+    local grid, width, height = createMatchGrid(match.coords) --stores normalised coordinates from match, ranging from 0->max x and y
 
     local horizontalRuns = {}
     local verticalRuns = {}
@@ -55,24 +55,29 @@ function calculateSpecialGems(match)
         print("Vertical runs: "..tostring(#verticalRuns))
     end
 
+    local position = match.coords[math.floor((#match.coords+1)/2)]
+
     if gemsMatched == 4 and (#horizontalRuns == 0 or #verticalRuns == 0) then --if 4 gems have been matched, and match is only in one direction
         return {
             type = SPECIAL_MATCHES.FOUR_GEM,
-            position = match[math.floor((#match+1)/2)]
+            position = position,
+            colour = match.colour
         }
     end
 
     if gemsMatched == 5 and (#horizontalRuns == 0 or #verticalRuns == 0) then --if 5 gems have been matched, and match is only in one direction
         return {
             type = SPECIAL_MATCHES.FIVE_GEM,
-            position = match[math.floor((#match+1)/2)]
+            position = position,
+            colour = match.colour
         }
     end
 
     if #horizontalRuns > 0 and #verticalRuns > 0 then --if match is in both directions, match must intersect
         return {
             type = SPECIAL_MATCHES.INTERSECTION,
-            position = match[math.floor((#match+1)/2)]
+            position = position,
+            colour = match.colour
         }
     end
 

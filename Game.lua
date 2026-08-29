@@ -187,7 +187,11 @@ function Game:changeState(newState)
         if debugMode and debugModeSettings.showSpecialGems then
             print("-----------------")
             for _, special in ipairs(specials) do
-                print(special.type.." found at "..coordinateToString(special.position))
+                if special.position then
+                    print(special.type.." found at "..coordinateToString(special.position))
+                else
+                    print("Attempted to spawn special of type "..special.type.." but position is null")
+                end
             end
         end
 

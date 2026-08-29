@@ -26,6 +26,7 @@ function findMatches(board)
         for y=1,board.height do
             local matchIndex, found = containsCoord(matches,x,y)
             if not found then
+                local matchColour = board:getTile(x,y).color
                 --this calculates the total matching tiles in each direction
                 local left = checkMatch(board,x,y,'left') 
                 local right = checkMatch(board,x,y,'right')
@@ -86,12 +87,12 @@ function findMatches(board)
                         table.remove(matches, combineMatchIndex) -- remove from table to prevent duplicate matches
 
                         for _, coord in ipairs(coords) do
-                            table.insert(matchToCombine, coord) --insert coord from new table into old one
+                            table.insert(matchToCombine.coords, coord) --insert coord from new table into old one
                         end
                         
                         table.insert(matches, matchToCombine) --reinsert combined table into matches
                     else --if there is no match to combine, insert coords into matches
-                        table.insert(matches,coords)
+                        table.insert(matches,{colour=matchColour, coords=coords})
                     end
                 end
             end
@@ -107,7 +108,7 @@ function findMatches(board)
             print("Found matches are:")
             for i, match in ipairs(matches) do
                 print("Match "..tostring(i))
-                for _, coord in ipairs(match) do
+                for _, coord in ipairs(match.coords) do
                     print(coordinateToString(coord))
                 end
             end
@@ -160,7 +161,7 @@ end
 
 function containsCoord(matches, x, y)
     for i, match in ipairs(matches) do
-        for _, coord in ipairs(match) do
+        for _, coord in ipairs(match.coords) do
 
             if coord.x == x and coord.y == y then
                 return i, true

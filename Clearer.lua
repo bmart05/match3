@@ -5,7 +5,7 @@ require "Utilities"
 function clearGems(board, matches)
     local clearedGems = {}
     for _, match in ipairs(matches) do
-        for _, coord in ipairs(match) do
+        for _, coord in ipairs(match.coords) do
             
             if not foundInCoordTable(clearedGems,coord) then
                 local gem = board:getTile(coord.x,coord.y)
@@ -62,18 +62,16 @@ function calculateExplosion(board, pos, radius)
     local clearedGems = {}
     for x=(pos.x-radius),(pos.x+radius) do --loop in grid the width of 2 radiuses around pos
         for y=(pos.y-radius),(pos.y+radius) do
-            if not (x == pos.x and y == pos.y) then
-                print("Clearing at: "..coordinateToString({x=x,y=y}))
-                local gem = board:getTile(x,y)
-                table.insert(clearedGems, {
-                    gem = gem,
-                    x = x,
-                    y = y
-                })
-
-                
-
-                
+            if x >= 1 and x <= board.width and y >= 1 and y <= board.height then
+                if not (x == pos.x and y == pos.y) then
+                    print("Clearing at: "..coordinateToString({x=x,y=y}))
+                    local gem = board:getTile(x,y)
+                    table.insert(clearedGems, {
+                        gem = gem,
+                        x = x,
+                        y = y
+                    })
+                end
             end
         end
     end
@@ -222,6 +220,8 @@ function checkSpecialGem(newGem, specialGems, x, y)
     for _, special in ipairs(specialGems) do
         if special.position.x == x and special.position.y == y then --if in the position to spawn a special gem
             --spawn special gem
+            newGem.color = special.colour
+
             if special.type == SPECIAL_MATCHES.FOUR_GEM then
                 newGem.type = Gem.types.FIRE
             end
