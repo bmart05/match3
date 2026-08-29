@@ -33,7 +33,7 @@ function foundInCoordTable(table, item)
 end
 
 function coordinateToString(coordinate) 
-    return tostring(coordinate.x)..","..tostring(coordinate.y)
+    return "("..tostring(coordinate.x)..", "..tostring(coordinate.y)..")"
 end
 
 function normaliseCoordinates(coords) 

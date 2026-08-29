@@ -204,6 +204,7 @@ function Game:changeState(newState)
                 Audio:playSFX(Audio.SFX.EXPLOSION)
             end
             if cleared.gem.type == Gem.types.LIGHTNING then
+                Audio:playSFX(Audio.SFX.EXPLOSION)
                 Audio:playSFX(Audio.SFX.LIGHTNING)
             end
         end
