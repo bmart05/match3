@@ -195,8 +195,11 @@ function Game:changeState(newState)
         local clearedGems = clearGems(self.board, matches)
 
         for _, cleared in ipairs(clearedGems) do
-            if cleared.gem.type ~= Gem.types.REGULAR then
+            if cleared.gem.type == Gem.types.FIRE then
                 Audio:playSFX(Audio.SFX.EXPLOSION)
+            end
+            if cleared.gem.type == Gem.types.LIGHTNING then
+                Audio:playSFX(Audio.SFX.LIGHTNING)
             end
         end
 

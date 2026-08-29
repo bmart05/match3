@@ -27,6 +27,17 @@ function clearGems(board, matches)
                         end
                     end
                 end
+                if gem.type == Gem.types.LIGHTNING then
+                    --calculate explosion
+                    local cleared = calculateLightning(board,coord)
+                    
+                    for _, clearData in ipairs(cleared) do --add all cleared gems to clearedGems table
+
+                        if not foundInCoordTable(clearedGems,clearData) then
+                            table.insert(clearedGems, clearData)
+                        end
+                    end
+                end
             end
         end
     end
@@ -46,6 +57,7 @@ function clearGems(board, matches)
     return clearedGems
 end
 
+
 function calculateExplosion(board, pos, radius)
     local clearedGems = {}
     for x=(pos.x-radius),(pos.x+radius) do --loop in grid the width of 2 radiuses around pos
@@ -60,7 +72,37 @@ function calculateExplosion(board, pos, radius)
                 })
 
                 
+
+                
             end
+        end
+    end
+    return clearedGems
+end
+
+function calculateLightning(board, pos)
+    local clearedGems = {}
+    --clear horizontally
+    for x=1,board.width do
+        local gem = board:getTile(x,pos.y)
+        if gem then
+            table.insert(clearedGems, {
+                gem = gem,
+                x = x,
+                y = pos.y
+            })
+        end
+    end
+
+    --clear vertically
+    for y=1,board.height do
+        local gem = board:getTile(pos.x,y)
+        if gem then
+            table.insert(clearedGems, {
+                gem = gem,
+                x = pos.x,
+                y = y
+            })
         end
     end
     return clearedGems
