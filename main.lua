@@ -18,6 +18,9 @@ require "Game"
 
 function love.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
+
+    local desktopWidth, desktopHeight = love.window.getDesktopDimensions()
+	love.window.setMode (desktopWidth/2, desktopHeight/2, {resizable=true, borderless=false})
     
     game = Game()
 end

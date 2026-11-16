@@ -26,10 +26,10 @@ Game.animationTypes = {
 function Game:new()
     self.board = Board(10, 10)
     self.origin = {
-        x = 250,
-        y = 50
+        x = 1000,
+        y = 75
     }
-    self.cellSize = 50
+    self.cellSize = 100
 
     self.selectedTile = nil
     self.invalid_match = nil
